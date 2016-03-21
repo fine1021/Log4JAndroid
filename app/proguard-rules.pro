@@ -15,3 +15,18 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# Keep a fixed source file attribute and all line number tables to get line
+# numbers in the stack traces.
+# You can comment this out if you're not interested in stack traces.
+
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+
+-keep class org.slf4j.** { *; }
+-keep class org.apache.log4j.** { *; }
+-keep class de.mindpipe.android.logging.log4j.** { *; }
+
+-dontwarn org.slf4j.**
+-dontwarn org.apache.log4j.**
+-dontwarn de.mindpipe.android.logging.log4j.**
