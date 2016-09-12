@@ -52,7 +52,7 @@ public class Log4JApplication extends Application {
             logConfigurator.setResetConfiguration(true);
             logConfigurator.setFileName(fileName);
             logConfigurator.setRootLevel(Level.DEBUG);
-//            logConfigurator.setLevel("org.apache", Level.ERROR);
+            logConfigurator.setLevel("org.apache", Level.ERROR);
             logConfigurator.setFilePattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t] [%c{2}]-[%L] %m%n");
             logConfigurator.setMaxFileSize(1024 * 1024 * 5);
             logConfigurator.setUseFileAppender(sdcardExist);
