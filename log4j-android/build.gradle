@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 25
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -29,3 +29,53 @@ dependencies {
     compile 'log4j:log4j:1.2.17'
     testCompile 'junit:junit:4.12'
 }
+
+task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
+
+    baseName = "log4j-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+//    classifier = "release"
+    extension = "jar"
+
+    // [baseName]-[appendix]-[version]-[classifier].[extension]
+    // archiveName = "log4j-android.jar"
+
+    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
+    from srcClassDir
+
+    exclude "com/android/support/log4j/BuildConfig.class"
+    exclude "**/R.class"
+    exclude "**/R\$*.class"
+
+    include "com/android/support/log4j/*.class"
+}
+
+task sourcesJar(type: Jar) {
+
+    baseName = "log4j-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+    classifier = "sources"
+    extension = "jar"
+
+    from android.sourceSets.main.java.srcDirs
+}
+
+task javadoc(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+
+    baseName = "log4j-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+    classifier = "javadoc"
+    extension = "jar"
+
+    from javadoc.destinationDir
+}
+
