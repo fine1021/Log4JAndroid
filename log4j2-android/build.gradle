@@ -1,0 +1,82 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "26.0.0"
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'org.apache.logging.log4j:log4j-api:2.3'
+    compile 'org.apache.logging.log4j:log4j-core:2.3'
+    compile 'org.apache.commons:commons-compress:1.12'
+    testCompile 'junit:junit:4.12'
+}
+
+task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
+
+    baseName = "log4j2-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+//    classifier = "release"
+    extension = "jar"
+
+    // [baseName]-[appendix]-[version]-[classifier].[extension]
+    // archiveName = "log4j2-android.jar"
+
+    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
+    from srcClassDir
+
+    exclude "android/support/log4j2/BuildConfig.class"
+    exclude "**/R.class"
+    exclude "**/R\$*.class"
+
+    include "android/support/log4j2/*.class"
+}
+
+task sourcesJar(type: Jar) {
+
+    baseName = "log4j2-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+    classifier = "sources"
+    extension = "jar"
+
+    from android.sourceSets.main.java.srcDirs
+}
+
+task javadoc(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+
+    baseName = "log4j2-android"
+//    appendix = "bridge"
+    version = '1.0.0'
+    classifier = "javadoc"
+    extension = "jar"
+
+    from javadoc.destinationDir
+}
