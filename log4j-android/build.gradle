@@ -44,11 +44,11 @@ task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
     def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
     from srcClassDir
 
-    exclude "com/android/support/log4j/BuildConfig.class"
+    exclude "android/support/log4j/BuildConfig.class"
     exclude "**/R.class"
     exclude "**/R\$*.class"
 
-    include "com/android/support/log4j/*.class"
+    include "android/support/log4j/*.class"
 }
 
 task sourcesJar(type: Jar) {

@@ -5,9 +5,8 @@ import android.app.Application;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
+import android.support.log4j.LogConfigurator;
 import android.util.Log;
-
-import com.android.support.log4j.LogConfigurator;
 
 import org.apache.log4j.Level;
 

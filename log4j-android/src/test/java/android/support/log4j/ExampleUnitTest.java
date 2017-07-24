@@ -1,4 +1,4 @@
-package com.android.support.log4j;
+package android.support.log4j;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.android.support.log4j;
+package android.support.log4j;
 
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Layout;

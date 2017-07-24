@@ -1,4 +1,4 @@
-package com.android.support.log4j;
+package android.support.log4j;
 
 import java.util.Calendar;
 import java.util.Date;

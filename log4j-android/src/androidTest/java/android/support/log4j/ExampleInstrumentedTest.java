@@ -1,4 +1,4 @@
-package com.android.support.log4j;
+package android.support.log4j;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 
-    package="com.android.support.log4j">
+    package="android.support.log4j">
 
     <application
         android:allowBackup="true"
