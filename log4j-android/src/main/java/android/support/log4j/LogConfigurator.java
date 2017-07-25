@@ -6,9 +6,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.helpers.LogLog;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 
 /**
  * Configures the Log4j logging framework.
@@ -30,6 +32,7 @@ public class LogConfigurator {
     private String datePattern = "'.'yyyy-MM-dd";
     private boolean asyncFileAppender = true;
     private int maxBackupDays = -1;
+    private boolean dailyRollingMode = true;
 
     public LogConfigurator() {
     }
@@ -107,41 +110,46 @@ public class LogConfigurator {
     }
 
     private void configureFileAppender() {
-        /*final Logger root = Logger.getRootLogger();
-        final RollingFileAppender rollingFileAppender;
-        final Layout fileLayout = new PatternLayout(getFilePattern());
-
-        try {
-            rollingFileAppender = new RollingFileAppender(fileLayout, getFileName());
-        } catch (final IOException e) {
-            throw new RuntimeException("Exception configuring log system", e);
-        }
-
-        rollingFileAppender.setMaxBackupIndex(getMaxBackupSize());
-        rollingFileAppender.setMaximumFileSize(getMaxFileSize());
-        rollingFileAppender.setImmediateFlush(isImmediateFlush());
-
-        root.addAppender(rollingFileAppender);*/
-
         final Logger root = Logger.getRootLogger();
         final Layout fileLayout = new PatternLayout(getFilePattern());
-        final DailyRollingFileAppender dailyRollingFileAppender;
-        try {
-            dailyRollingFileAppender = new DailyRollingFileAppender(fileLayout, getFileName(), getDatePattern());
-        } catch (final IOException e) {
-            throw new RuntimeException("Exception configuring log system", e);
-        }
-        dailyRollingFileAppender.setImmediateFlush(isImmediateFlush());
-        dailyRollingFileAppender.setMaximumFileSize(getMaxFileSize());
-        dailyRollingFileAppender.setMaxBackupIndex(getMaxBackupSize());
-        dailyRollingFileAppender.setMaxBackupDays(getMaxBackupDays());
 
-        if (isAsyncFileAppender()) {
-            AsyncAppender asyncAppender = new AsyncAppender();
-            asyncAppender.addAppender(dailyRollingFileAppender);
-            root.addAppender(asyncAppender);
+        if (isDailyRollingMode()) {
+            final DailyRollingFileAppender dailyRollingFileAppender;
+            try {
+                dailyRollingFileAppender = new DailyRollingFileAppender(fileLayout, getFileName(), getDatePattern());
+            } catch (final IOException e) {
+                throw new RuntimeException("Exception configuring log system", e);
+            }
+            dailyRollingFileAppender.setImmediateFlush(isImmediateFlush());
+            dailyRollingFileAppender.setMaximumFileSize(getMaxFileSize());
+            dailyRollingFileAppender.setMaxBackupIndex(getMaxBackupSize());
+            dailyRollingFileAppender.setMaxBackupDays(getMaxBackupDays());
+
+            if (isAsyncFileAppender()) {
+                AsyncAppender asyncAppender = new AsyncAppender();
+                asyncAppender.addAppender(dailyRollingFileAppender);
+                root.addAppender(asyncAppender);
+            } else {
+                root.addAppender(dailyRollingFileAppender);
+            }
         } else {
-            root.addAppender(dailyRollingFileAppender);
+            final RollingFileAppender rollingFileAppender;
+            try {
+                rollingFileAppender = new RollingFileAppender(fileLayout, getFileName());
+            } catch (final IOException e) {
+                throw new RuntimeException("Exception configuring log system", e);
+            }
+            rollingFileAppender.setMaxBackupIndex(getMaxBackupSize());
+            rollingFileAppender.setMaximumFileSize(getMaxFileSize());
+            rollingFileAppender.setImmediateFlush(isImmediateFlush());
+
+            if (isAsyncFileAppender()) {
+                AsyncAppender asyncAppender = new AsyncAppender();
+                asyncAppender.addAppender(rollingFileAppender);
+                root.addAppender(asyncAppender);
+            } else {
+                root.addAppender(rollingFileAppender);
+            }
         }
     }
 
@@ -304,10 +312,22 @@ public class LogConfigurator {
         return internalDebugging;
     }
 
+    /**
+     * Returns the value of the <b>DatePattern</b> option.
+     *
+     * @return datePattern
+     */
     public String getDatePattern() {
         return datePattern;
     }
 
+    /**
+     * The <b>DatePattern</b> takes a string in the same format as
+     * expected by {@link SimpleDateFormat}. This options determines the
+     * rollover schedule. used by {@link DailyRollingFileAppender}
+     *
+     * @param datePattern datePattern
+     */
     public void setDatePattern(String datePattern) {
         this.datePattern = datePattern;
     }
@@ -320,11 +340,40 @@ public class LogConfigurator {
         this.asyncFileAppender = asyncFileAppender;
     }
 
+    /**
+     * Returns the value of the <b>MaxBackupDays</b> option.
+     *
+     * @return maxBackupDays
+     */
     public int getMaxBackupDays() {
         return maxBackupDays;
     }
 
+    /**
+     * Set the maximum days the log should keep, <tt>-1</tt> means keep all the logs
+     *
+     * @param maxBackupDays maxBackupDays
+     */
     public void setMaxBackupDays(int maxBackupDays) {
         this.maxBackupDays = maxBackupDays;
+    }
+
+    /**
+     * Returns the value of the <b>DailyRollingMode</b> option.
+     *
+     * @return dailyRollingMode
+     */
+    public boolean isDailyRollingMode() {
+        return dailyRollingMode;
+    }
+
+    /**
+     * Set the dailyRollingMode, it only valid when {@link #isUseFileAppender()} return true
+     *
+     * @param dailyRollingMode If set to {@code true}, {@link DailyRollingFileAppender} will be used for logging,
+     *                         otherwise {@link RollingFileAppender} will be used for logging
+     */
+    public void setDailyRollingMode(boolean dailyRollingMode) {
+        this.dailyRollingMode = dailyRollingMode;
     }
 }

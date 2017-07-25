@@ -26,8 +26,8 @@ public class Log4JApplication extends Application {
         super.onCreate();
         log4JApplication = this;
         if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
-                    PackageManager.PERMISSION_GRANTED) {
+            if (checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, android.os.Process.myPid(),
+                    android.os.Process.myUid()) == PackageManager.PERMISSION_GRANTED) {
                 log4jConfigure(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
             } else {
                 log4jConfigure(false);

@@ -204,7 +204,7 @@ public class DailyRollingFileAppender extends FileAppender {
     /**
      * Instantiate a <code>DailyRollingFileAppender</code> and open the
      * file designated by <code>filename</code>. The opened filename will
-     * become the ouput destination for this appender.
+     * become the output destination for this appender.
      */
     public DailyRollingFileAppender(Layout layout, String filename,
                                     String datePattern) throws IOException {
