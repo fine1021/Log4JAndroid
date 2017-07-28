@@ -1,1 +1,1 @@
-include ':app', ':log4j-android', ':log4j2-android'
+include ':app', ':log4j-android', ':log4j2-android', ':app-log4j2'

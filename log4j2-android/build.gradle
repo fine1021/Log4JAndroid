@@ -22,13 +22,16 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'org.apache.logging.log4j:log4j-api:2.3'
-    compile 'org.apache.logging.log4j:log4j-core:2.3'
-    compile 'org.apache.commons:commons-compress:1.12'
+    provided 'org.slf4j:slf4j-api:1.7.25'
+    provided 'org.apache.logging.log4j:log4j-slf4j-impl:2.3'
+    provided 'org.apache.logging.log4j:log4j-api:2.3'
+    provided 'org.apache.logging.log4j:log4j-core:2.3'
+    provided 'org.apache.commons:commons-compress:1.12'
+    provided 'com.lmax:disruptor:3.3.6'
     testCompile 'junit:junit:4.12'
 }
 
