@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<Configuration status="debug">
+<Configuration status="OFF">
     <Appenders>
         <Logcat name="Logcat">
-            <ThresholdFilter level="ALL" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="[%t] %m" />
+            <ThresholdFilter
+                level="ALL"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%m"/>
         </Logcat>
-        <RollingRandomAccessFile name="RollingRandomAccessFile" fileName="${android:logfilesdir}/app.log"
-            filePattern="${android:logfilesdir}/app-%d{yyyy-MM-dd}-%i.log.gz" immediateFlush="false"
-                                 append="true">
-            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        <RollingRandomAccessFile
+            name="RollingRandomAccessFile"
+            append="true"
+            fileName="${android:external.logs.dir}/app_async.log"
+            filePattern="${android:external.logs.dir}/app_async-%d{yyyy-MM-dd}-%i.log.gz"
+            immediateFlush="false">
+            <ThresholdFilter
+                level="DEBUG"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
             <PatternLayout>
                 <Pattern>%d %p %c{1} [%t] %m%n</Pattern>
             </PatternLayout>

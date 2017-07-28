@@ -3,12 +3,20 @@
 <Configuration status="debug">
     <Appenders>
         <Logcat name="Logcat">
-            <ThresholdFilter level="ALL" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="%m" />
+            <ThresholdFilter
+                level="ALL"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%m"/>
         </Logcat>
-        <RollingFile name="RollingFile" fileName="${android:logfilesdir}/app.log"
-            filePattern="${android:logfilesdir}/app-%d{yyyy-MM-dd}-%i.log.gz">
-            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        <RollingFile
+            name="RollingFile"
+            fileName="${android:external.logs.dir}/app.log"
+            filePattern="${android:external.logs.dir}/app-%d{yyyy-MM-dd}-%i.log.gz">
+            <ThresholdFilter
+                level="DEBUG"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
             <PatternLayout>
                 <Pattern>%d %p %c{1} [%t] %m%n</Pattern>
             </PatternLayout>
@@ -18,7 +26,9 @@
             </Policies>
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
-        <Async name = "Async" bufferSize = "512">
+        <Async
+            name="Async"
+            bufferSize="512">
             <AppenderRef ref="RollingFile"/>
         </Async>
     </Appenders>

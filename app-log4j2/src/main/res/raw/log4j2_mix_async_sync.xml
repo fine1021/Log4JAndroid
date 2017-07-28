@@ -3,13 +3,22 @@
 <Configuration status="debug">
     <Appenders>
         <Logcat name="Logcat">
-            <ThresholdFilter level="ALL" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="[%t] %m" />
+            <ThresholdFilter
+                level="ALL"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
+            <PatternLayout pattern="%m"/>
         </Logcat>
-        <RollingRandomAccessFile name="RollingRandomAccessFile" fileName="${android:logfilesdir}/app.log"
-            filePattern="${android:logfilesdir}/app-%d{yyyy-MM-dd}-%i.log.gz"
-                                 immediateFlush="false" append="true">
-            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        <RollingRandomAccessFile
+            name="RollingRandomAccessFile"
+            append="true"
+            fileName="${android:external.logs.dir}/app.log"
+            filePattern="${android:external.logs.dir}/app-%d{yyyy-MM-dd}-%i.log.gz"
+            immediateFlush="false">
+            <ThresholdFilter
+                level="DEBUG"
+                onMatch="ACCEPT"
+                onMismatch="DENY"/>
             <PatternLayout>
                 <Pattern>%d %p %c{1} [%t] %m%n</Pattern>
             </PatternLayout>
@@ -22,7 +31,7 @@
     </Appenders>
 
     <Loggers>
-        <AsyncLogger name="com.foo.Bar" level="trace">
+        <AsyncLogger level="DEBUG">
             <AppenderRef ref="RollingRandomAccessFile"/>
         </AsyncLogger>
         <Root level="DEBUG">

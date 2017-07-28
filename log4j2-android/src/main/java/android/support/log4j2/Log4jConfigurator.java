@@ -41,9 +41,12 @@ public class Log4jConfigurator {
 
     private static final String TAG = "Log4jConfigurator";
 
-    static {
+
+    public static void initEnv() {
         // disable JMX
         System.setProperty("log4j2.disable.jmx", "true");
+        // default selector set to AndroidContextSelector
+        System.setProperty("Log4jContextSelector", "android.support.log4j2.selector.AndroidContextSelector");
     }
 
     public static void initStatic(Context context) {
@@ -83,25 +86,11 @@ public class Log4jConfigurator {
     }
 
     public static void setXmlConfiguration(InputStream is) {
-        if (is == null) {
-            Log.e(TAG, "setXmlConfiguration: stream is null");
-            return;
-        }
-        try {
-            Log.i(TAG, "setXmlConfiguration: stream length = " + is.available());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
         try {
             ConfigurationSource source = new ConfigurationSource(is);
             Configuration config = XmlConfigurationFactory.getInstance().getConfiguration(source);
-            if (config != null) {
-                Log.i(TAG, "setXmlConfiguration: config is not null");
-                context.start(config);
-            } else {
-                Log.w(TAG, "setXmlConfiguration: config is null");
-            }
+            context.start(config);
         } catch (IOException e) {
             Log.e(TAG, "setXmlConfiguration: ", e);
         }

@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.log4j2.Log4jConfigurator;
 import android.support.v4.app.ActivityCompat;
@@ -19,15 +21,14 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private static final Logger LOGGER = LoggerFactory.getLogger(TAG);
-    private Timer timer;
+    private static Logger sLogger;
+    private HandlerThread mHandlerThread;
+    private Timer mTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        LOGGER.info("onCreate");
         checkPermission();
     }
 
@@ -36,16 +37,41 @@ public class MainActivity extends AppCompatActivity {
                 PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         } else {
+            sLogger = LoggerFactory.getLogger(TAG);
             onPostPermissionCheckCompleted();
         }
     }
 
     private void onPermissionCheckCompleted() {
         if (Build.VERSION.SDK_INT >= 23) {
-            Log4jConfigurator.initStatic(getApplicationContext(), false,
-                    getResources().openRawResource(R.raw.log4j2_normal));
+            mHandlerThread = new HandlerThread(TAG);
+            mHandlerThread.start();
+            Handler handler = new Handler(mHandlerThread.getLooper());
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    long t = System.currentTimeMillis();
+                    Log4jConfigurator.initStatic(getApplicationContext(), true,
+                            getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+                    sLogger = LoggerFactory.getLogger(TAG);
+                    sLogger.info("Log4j2 Initialization work took {} ms", (System.currentTimeMillis() - t));
+                    sLogger.info("onPermissionCheckCompleted");
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (Build.VERSION.SDK_INT >= 18) {
+                                mHandlerThread.quitSafely();
+                            } else {
+                                mHandlerThread.quit();
+                            }
+                            sLogger.debug("HandlerThread quit, for it has completed it's job");
+                            onPostPermissionCheckCompleted();
+                        }
+                    });
+                }
+            });
         }
-        LOGGER.info("onPermissionCheckCompleted");
     }
 
     private void onPostPermissionCheckCompleted() {
@@ -53,11 +79,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void testLog4j() {
-        timer = new Timer("Log4j2Test");
-        timer.schedule(new TimerTask() {
+        mTimer = new Timer("Log4j2Test");
+        mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                LOGGER.debug("Life is sad at times, but it is up to you to make your own life happy.");
+                sLogger.debug("Life is sad at times, but it is up to you to make your own life happy.");
             }
         }, 0, 1000);
     }
@@ -67,12 +93,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1 && grantResults.length == 1) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        onPermissionCheckCompleted();
-                    }
-                });
+                onPermissionCheckCompleted();
             } else {
                 finish();
             }
@@ -81,8 +102,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (timer != null) {
-            timer.cancel();
+        if (mTimer != null) {
+            mTimer.cancel();
         }
         super.onDestroy();
     }
