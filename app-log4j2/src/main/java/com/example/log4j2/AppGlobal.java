@@ -43,6 +43,7 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
 
         t = System.currentTimeMillis();
         Log4jConfigurator.initEnv();
+        System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
         Log.i(TAG, "onCreate: log4j2 initEnv took " + (System.currentTimeMillis() - t) + "ms");
 
         Handler handler = new Handler(mHandlerThread.getLooper());
@@ -61,7 +62,7 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
                         Log4jConfigurator.initStatic(getApplicationContext(), true,
                                 getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
                     } else {
-                        Log4jConfigurator.initStatic(getApplicationContext(), false,
+                        Log4jConfigurator.initStatic(getApplicationContext(), true,
                                 getResources().openRawResource(R.raw.log4j2_logcat));
                     }
                 } else {
