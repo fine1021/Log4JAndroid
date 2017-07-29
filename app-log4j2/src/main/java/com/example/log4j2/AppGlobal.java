@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.log4j2.Log4jConfigurator;
 import android.support.log4j2.slf4j.Log4jHook;
-import android.support.log4j2.status.StatusLoggerHook;
 import android.util.Log;
 
 import org.slf4j.Logger;
@@ -23,9 +22,19 @@ import org.slf4j.LoggerFactory;
 public class AppGlobal extends Application implements Thread.UncaughtExceptionHandler {
 
     private static final String TAG = "AppGlobal";
+    private static Logger sLogger;
+    private static AppGlobal sAppGlobal;
+
     private Thread.UncaughtExceptionHandler mDefaultHandler;
     private HandlerThread mHandlerThread;
-    private static Logger sLogger;
+    private Handler mHandler;
+
+    public static AppGlobal getInstance() {
+        if (sAppGlobal == null) {
+            throw new IllegalStateException("Unbelievable? Application is null");
+        }
+        return sAppGlobal;
+    }
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -37,50 +46,25 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
     @Override
     public void onCreate() {
         super.onCreate();
+        sAppGlobal = this;
         long t = System.currentTimeMillis();
         Log4jHook.hookStatic();
         Log.i(TAG, "onCreate: slf4j hookStatic took " + (System.currentTimeMillis() - t) + "ms");
 
         t = System.currentTimeMillis();
-        Log4jConfigurator.initEnv();
-        System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+        Log4jConfigurator.initEnv(true);
         Log.i(TAG, "onCreate: log4j2 initEnv took " + (System.currentTimeMillis() - t) + "ms");
 
-        Handler handler = new Handler(mHandlerThread.getLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                StatusLoggerHook.hookStatic();
-                /*
-                 * 更新日志配置的时候，如果{@link ContextSelector}发生变化的话，
-                 * 之前已经初始化的日志就不会同步了，所以要保持{@link ContextSelector}一致
-                 */
-                long t = System.currentTimeMillis();
-                if (Build.VERSION.SDK_INT >= 23) {
-                    if (checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, android.os.Process.myPid(),
-                            android.os.Process.myUid()) == PackageManager.PERMISSION_GRANTED) {
-                        Log4jConfigurator.initStatic(getApplicationContext(), true,
-                                getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
-                    } else {
-                        Log4jConfigurator.initStatic(getApplicationContext(), true,
-                                getResources().openRawResource(R.raw.log4j2_logcat));
-                    }
-                } else {
-                    Log4jConfigurator.initStatic(getApplicationContext(), true,
-                            getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
-                }
-                sLogger = LoggerFactory.getLogger(TAG);
-                sLogger.info("Log4j2 Initialization work took {} ms", (System.currentTimeMillis() - t));
-                mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
-                Thread.setDefaultUncaughtExceptionHandler(AppGlobal.this);
-                sLogger.debug("HandlerThread quit, for it has completed it's job");
-                if (Build.VERSION.SDK_INT >= 18) {
-                    mHandlerThread.quitSafely();
-                } else {
-                    mHandlerThread.quit();
-                }
-            }
-        });
+        t = System.currentTimeMillis();
+        mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(AppGlobal.this);
+        mHandler = new Handler(mHandlerThread.getLooper());
+        mHandler.post(mLog4j2InitRunnable);
+        Log.i(TAG, "onCreate: remaining work took " + (System.currentTimeMillis() - t) + "ms");
+    }
+
+    public void applyLog4j2Update() {
+        mHandler.post(mLog4j2UpdateRunnable);
     }
 
     @Override
@@ -94,8 +78,59 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
     }
 
     private boolean handleException(Throwable ex) {
-        Log.e(TAG, "handleException: ", ex);
-        sLogger.error(Log.getStackTraceString(ex));
-        return true;
+        if (sLogger != null) {
+            sLogger.error(Log.getStackTraceString(ex));
+            return true;
+        } else {
+            Log.e(TAG, "handleException: ", ex);
+            return false;
+        }
     }
+
+    /**
+     * 更新日志配置的时候，如果{@code ContextSelector}发生变化的话，
+     * 之前已经使用其他的{@code ContextSelector}初始化的日志就不会同步了，
+     * 所以必须保持{@code ContextSelector}一致
+     */
+    private void log4j2Configuration() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, android.os.Process.myPid(),
+                    android.os.Process.myUid()) == PackageManager.PERMISSION_GRANTED) {
+                Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+            } else {
+                Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_logcat));
+            }
+        } else {
+            Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+        }
+        if (sLogger == null) {
+            sLogger = LoggerFactory.getLogger(TAG);
+        }
+    }
+
+    /**
+     * {@code Log4j2}更新日志配置任务
+     */
+    private Runnable mLog4j2UpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            long t = System.currentTimeMillis();
+            log4j2Configuration();
+            sLogger.info("Log4j2 Update work took {} ms", (System.currentTimeMillis() - t));
+        }
+    };
+
+    /**
+     * {@code Log4j2}初始化和日志配置任务
+     */
+    private Runnable mLog4j2InitRunnable = new Runnable() {
+        @Override
+        public void run() {
+            long t = System.currentTimeMillis();
+//            StatusLoggerHook.hookStatic();
+            Log4jConfigurator.initStatic(getApplicationContext(), true);
+            log4j2Configuration();
+            sLogger.info("Log4j2 Initialization & Update work took {} ms", (System.currentTimeMillis() - t));
+        }
+    };
 }

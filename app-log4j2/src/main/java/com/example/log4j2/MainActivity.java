@@ -4,10 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.support.log4j2.Log4jConfigurator;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -22,7 +19,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static Logger sLogger;
-    private HandlerThread mHandlerThread;
     private Timer mTimer;
 
     @Override
@@ -38,37 +34,20 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         } else {
             sLogger = LoggerFactory.getLogger(TAG);
+            sLogger.info("before onPostPermissionCheckCompleted");
             onPostPermissionCheckCompleted();
         }
     }
 
     private void onPermissionCheckCompleted() {
         if (Build.VERSION.SDK_INT >= 23) {
-            mHandlerThread = new HandlerThread(TAG);
-            mHandlerThread.start();
-            Handler handler = new Handler(mHandlerThread.getLooper());
-            handler.post(new Runnable() {
+            runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    long t = System.currentTimeMillis();
-                    Log4jConfigurator.initStatic(getApplicationContext(), true,
-                            getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+                    AppGlobal.getInstance().applyLog4j2Update();
                     sLogger = LoggerFactory.getLogger(TAG);
-                    sLogger.info("Log4j2 Initialization work took {} ms", (System.currentTimeMillis() - t));
                     sLogger.info("onPermissionCheckCompleted");
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (Build.VERSION.SDK_INT >= 18) {
-                                mHandlerThread.quitSafely();
-                            } else {
-                                mHandlerThread.quit();
-                            }
-                            sLogger.debug("HandlerThread quit, for it has completed it's job");
-                            onPostPermissionCheckCompleted();
-                        }
-                    });
+                    onPostPermissionCheckCompleted();
                 }
             });
         }

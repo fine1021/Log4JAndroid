@@ -21,7 +21,9 @@ import org.apache.logging.log4j.core.config.plugins.util.PluginType;
 import org.apache.logging.log4j.core.config.plugins.util.ResolverUtil;
 import org.apache.logging.log4j.core.config.xml.XmlConfigurationFactory;
 import org.apache.logging.log4j.core.impl.Log4jContextFactory;
+import org.apache.logging.log4j.core.selector.ClassLoaderContextSelector;
 import org.apache.logging.log4j.core.util.Loader;
+import org.apache.logging.log4j.spi.LoggerContextFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,19 +42,52 @@ import java.util.concurrent.ConcurrentMap;
 public class Log4jConfigurator {
 
     private static final String TAG = "Log4jConfigurator";
+    private static final String PACKAGE_NAME = "android.support.log4j";
+    /**
+     * Name of the system property to use to identify the ContextSelector Class.
+     */
+    public static final String LOG4J_CONTEXT_SELECTOR = "Log4jContextSelector";
+    /**
+     * Android context selector
+     */
+    private static final String ANDROID_CONTEXT_SELECTOR = "android.support.log4j2.selector.AndroidContextSelector";
+    /**
+     * Default AsyncLoggerContextSelector
+     */
+    private static final String ASYNC_CONTEXT_SELECTOR = "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector";
 
 
-    public static void initEnv() {
-        // disable JMX
+    /**
+     * When not invoke {@link LogManager#setFactory(LoggerContextFactory)} to set a {@link LoggerContextFactory},
+     * log4j system will use {@link Log4jContextFactory#createContextSelector()} to create a default context selector.
+     * if not set env context selector, it will use {@link ClassLoaderContextSelector} as default,
+     * which maybe cause {@link NullPointerException}
+     *
+     * @param asyncLogger if set true, use {@link org.apache.logging.log4j.core.async.AsyncLogger} to print log,
+     *                    which is Low-Latency logging, used for high-throughput work.
+     *                    if use {@link org.apache.logging.log4j.core.appender.AsyncAppender} or normal logging,
+     *                    this flags should set to false.
+     */
+    public static void initEnv(boolean asyncLogger) {
+        // disable JMX on Android
         System.setProperty("log4j2.disable.jmx", "true");
-        // default selector set to AndroidContextSelector
-        System.setProperty("Log4jContextSelector", "android.support.log4j2.selector.AndroidContextSelector");
+        // set default env context selector.
+        if (asyncLogger) {
+            System.setProperty(LOG4J_CONTEXT_SELECTOR, ASYNC_CONTEXT_SELECTOR);
+        } else {
+            System.setProperty(LOG4J_CONTEXT_SELECTOR, ANDROID_CONTEXT_SELECTOR);
+        }
     }
 
-    public static void initStatic(Context context) {
-        initStatic(context, false);
-    }
-
+    /**
+     * init log4j2 and inject plugins used by Android
+     *
+     * @param context     the Android context
+     * @param asyncLogger if set true, use {@link org.apache.logging.log4j.core.async.AsyncLogger} to print log,
+     *                    which is Low-Latency logging, used for high-throughput work.
+     *                    if use {@link org.apache.logging.log4j.core.appender.AsyncAppender} or normal logging,
+     *                    this flags should set to false.
+     */
     public static void initStatic(Context context, boolean asyncLogger) {
         File file = context.getFilesDir();
         if (file != null) {
@@ -70,22 +105,20 @@ public class Log4jConfigurator {
         if (file != null) {
             AndroidLookup.getLookUpMap().put(AndroidLookup.EXTERNAL_STORAGE_DIR, file.getAbsolutePath());
         }
-//        System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
-//        System.setProperty("Log4jContextSelector", "android.support.log4j2.selector.AndroidContextSelector");
         if (asyncLogger) {
             LogManager.setFactory(new Log4jContextFactory(new AsyncLoggerContextSelector()));
         } else {
             LogManager.setFactory(new Log4jContextFactory(new AndroidContextSelector()));
         }
-        injectPlugins("android.support.log4j", new Class<?>[]{AndroidLookup.class, LogcatAppender.class});
+        injectPlugins(PACKAGE_NAME, new Class<?>[]{AndroidLookup.class, LogcatAppender.class});
     }
 
-    public static void initStatic(Context context, boolean asyncLogger, InputStream is) {
-        initStatic(context, asyncLogger);
-        setXmlConfiguration(is);
-    }
-
-    public static void setXmlConfiguration(InputStream is) {
+    /**
+     * Configuration the log4j system
+     *
+     * @param is the xml stream
+     */
+    public static void setConfiguration(InputStream is) {
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
         try {
             ConfigurationSource source = new ConfigurationSource(is);
@@ -94,6 +127,16 @@ public class Log4jConfigurator {
         } catch (IOException e) {
             Log.e(TAG, "setXmlConfiguration: ", e);
         }
+    }
+
+    /**
+     * Configuration the log4j system
+     *
+     * @param config the config
+     */
+    public static void setConfiguration(Configuration config) {
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        context.start(config);
     }
 
     private static void injectPlugins(String packageName, Class<?>[] classes) {

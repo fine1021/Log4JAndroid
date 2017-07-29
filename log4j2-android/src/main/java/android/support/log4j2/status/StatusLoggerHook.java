@@ -1,14 +1,11 @@
 package android.support.log4j2.status;
 
-import android.support.log4j2.simple.EmptyLogger;
-import android.util.Log;
-
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.status.StatusConfiguration;
+import org.apache.logging.log4j.core.config.xml.XmlConfiguration;
+import org.apache.logging.log4j.status.StatusConsoleListener;
+import org.apache.logging.log4j.status.StatusData;
 import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.logging.log4j.util.PropertiesUtil;
-import org.apache.logging.log4j.util.Strings;
-
-import java.lang.reflect.Field;
 
 /**
  * StatusLoggerHook
@@ -16,26 +13,33 @@ import java.lang.reflect.Field;
 
 public class StatusLoggerHook {
 
-    private static final String TAG = "StatusLoggerHook";
-    private static final PropertiesUtil PROPS = new PropertiesUtil("log4j2.StatusLogger.properties");
+    private static final EmptyStatusListener EMPTY_STATUS_LISTENER = new EmptyStatusListener();
 
+    /**
+     * in log4j {@link XmlConfiguration} constructor,
+     * {@link StatusConfiguration#initialize()} might add a {@link StatusConsoleListener} to {@link StatusLogger},
+     * so before we start configuration, add a {@link StatusConsoleListener} to avoid adding another one
+     * <br>
+     * if {@link StatusLogger} has listeners, it will deliver the log messages to these listeners
+     */
     public static void hookStatic() {
+        StatusLogger.getLogger().registerListener(EMPTY_STATUS_LISTENER);
+    }
 
-        StatusLogger.getLogger();
-        try {
-            StatusLogger.getLogger();
-            Field field = StatusLogger.class.getDeclaredField("logger");
-            field.setAccessible(true);
-            EmptyLogger logger = new EmptyLogger("StatusLogger", Level.ERROR, false, true, false,
-                    false, Strings.EMPTY, null, PROPS, System.err);
-            field.set(StatusLogger.getLogger(), logger);
-            Log.d(TAG, "hookStatic: set EmptyLogger OK");
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (Throwable e) {
-            e.printStackTrace();
+    private static class EmptyStatusListener extends StatusConsoleListener {
+
+        public EmptyStatusListener() {
+            super(Level.OFF);
+        }
+
+        @Override
+        public Level getStatusLevel() {
+            return Level.OFF;
+        }
+
+        @Override
+        public void log(StatusData data) {
+            // empty, no-op
         }
     }
 }
