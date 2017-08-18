@@ -16,17 +16,23 @@ import android.util.Log;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender;
+import org.apache.logging.log4j.core.appender.rolling.CleanTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.DefaultRolloverStrategy;
+import org.apache.logging.log4j.core.appender.rolling.MonitorTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.SizeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
+import org.apache.logging.log4j.core.config.AndroidConfiguration;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.status.StatusConfiguration;
 import org.apache.logging.log4j.core.filter.ThresholdFilter;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.slf4j.Logger;
@@ -124,7 +130,8 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
                 Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_logcat));
             }
         } else {
-            Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+//            Log4jConfigurator.setConfiguration(getResources().openRawResource(R.raw.log4j2_all_logger_asynchronous));
+            Log4jConfigurator.setConfiguration(new ProgrammaticConfiguration());
         }
         if (sLogger == null) {
             sLogger = LoggerFactory.getLogger(TAG);
@@ -159,7 +166,7 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
     };
 
     /**
-     * 必须通过{@link AbstractConfiguration#getRootLogger()}加入{@link org.apache.logging.log4j.core.Appender}才能更新成功
+     * 必须通过{@link AbstractConfiguration#getRootLogger()}或者{@link AndroidConfiguration#getRootLogger()}加入{@link Appender}才能更新成功
      * <br>
      * 通过创建一个新的{@link LoggerConfig}，然后再调用{@link org.apache.logging.log4j.core.config.Configuration#addLogger(String, LoggerConfig)}，这种方式无法更新
      * <p>
@@ -167,19 +174,27 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
      */
     private void log4j2ProgrammaticConfiguration() {
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        AbstractConfiguration config = (AbstractConfiguration) context.getConfiguration();
+        Configuration config = context.getConfiguration();
 
-        config.getAppenders().clear();
-        Map<String, LoggerConfig> map = config.getLoggers();
-        if (!map.isEmpty()) {
-            for (String s : map.keySet()) {
-                config.removeLogger(s);
+        if (config instanceof AbstractConfiguration) {
+            AbstractConfiguration abstractConfiguration = (AbstractConfiguration) config;
+            config.getAppenders().clear();
+            Map<String, LoggerConfig> map = config.getLoggers();
+            if (!map.isEmpty()) {
+                for (String s : map.keySet()) {
+                    config.removeLogger(s);
+                }
             }
-        }
-        if (!config.getRootLogger().getAppenders().isEmpty()) {
-            for (String s : config.getRootLogger().getAppenders().keySet()) {
-                config.getRootLogger().removeAppender(s);
+            if (!abstractConfiguration.getRootLogger().getAppenders().isEmpty()) {
+                for (String s : abstractConfiguration.getRootLogger().getAppenders().keySet()) {
+                    abstractConfiguration.getRootLogger().removeAppender(s);
+                }
             }
+        } else if (config instanceof AndroidConfiguration) {
+            AndroidConfiguration androidConfiguration = (AndroidConfiguration) config;
+            androidConfiguration.getAppenders().clear();
+            androidConfiguration.clearAppenders();
+            androidConfiguration.clearLoggerConfigs();
         }
 
         Layout<? extends Serializable> logcatLayout = PatternLayout.newBuilder().withPattern("%m").withConfiguration(config).build();
@@ -197,9 +212,12 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
         String name = "RollingRandomAccessFile";
         String immediateFlush = "false";
         ThresholdFilter fileFilter = ThresholdFilter.createFilter(Level.DEBUG, Filter.Result.ACCEPT, Filter.Result.DENY);
-        SizeBasedTriggeringPolicy sizeBasedTriggeringPolicy = SizeBasedTriggeringPolicy.createPolicy("1M");
+        MonitorTriggeringPolicy monitorTriggeringPolicy = MonitorTriggeringPolicy.createPolicy();
+        CleanTriggeringPolicy cleanTriggeringPolicy = CleanTriggeringPolicy.createPolicy("5");
+        SizeBasedTriggeringPolicy sizeBasedTriggeringPolicy = SizeBasedTriggeringPolicy.createPolicy("5M");
         TimeBasedTriggeringPolicy timeBasedTriggeringPolicy = TimeBasedTriggeringPolicy.createPolicy("1", "false");
-        CompositeTriggeringPolicy policies = CompositeTriggeringPolicy.createPolicy(sizeBasedTriggeringPolicy, timeBasedTriggeringPolicy);
+        CompositeTriggeringPolicy policies = CompositeTriggeringPolicy.createPolicy(monitorTriggeringPolicy,
+                cleanTriggeringPolicy, sizeBasedTriggeringPolicy, timeBasedTriggeringPolicy);
         DefaultRolloverStrategy defaultRolloverStrategy = DefaultRolloverStrategy.createStrategy("20", null, null, null, config);
         Layout<? extends Serializable> fileLayout = PatternLayout.newBuilder().withPattern("%d %p %c{1} [%t] %m%n").withConfiguration(config).build();
         RollingRandomAccessFileAppender rollingRandomAccessFileAppender = RollingRandomAccessFileAppender.createAppender(
@@ -217,37 +235,39 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
         rollingRandomAccessFileAppender.start();
         config.addAppender(rollingRandomAccessFileAppender);
 
-        config.getRootLogger().addAppender(logcatAppender, null, null);
-        config.getRootLogger().addAppender(rollingRandomAccessFileAppender, null, null);
-        config.getRootLogger().setLevel(Level.DEBUG);
+        if (config instanceof AbstractConfiguration) {
+            AbstractConfiguration abstractConfiguration = (AbstractConfiguration) config;
+            abstractConfiguration.getRootLogger().addAppender(logcatAppender, null, null);
+            abstractConfiguration.getRootLogger().addAppender(rollingRandomAccessFileAppender, null, null);
+            abstractConfiguration.getRootLogger().setLevel(Level.DEBUG);
+        } else if (config instanceof AndroidConfiguration) {
+            AndroidConfiguration androidConfiguration = (AndroidConfiguration) config;
+            androidConfiguration.getRootLogger().addAppender(logcatAppender, null, null);
+            androidConfiguration.getRootLogger().addAppender(rollingRandomAccessFileAppender, null, null);
+            androidConfiguration.getRootLogger().setLevel(Level.DEBUG);
+        }
         context.updateLoggers();
     }
 
     /**
-     * 必须通过{@link AbstractConfiguration#getRootLogger()}加入{@link org.apache.logging.log4j.core.Appender}才能更新成功
+     * 必须通过{@link AndroidConfiguration#getRootLogger()}加入{@link Appender}才能更新成功
      */
-    private class ProgrammaticConfiguration extends AbstractConfiguration {
+    private class ProgrammaticConfiguration extends AndroidConfiguration {
 
         protected ProgrammaticConfiguration() {
             super(ConfigurationSource.NULL_SOURCE);
+            StatusConfiguration statusConfig = new StatusConfiguration();
+            statusConfig.withStatus(Level.ERROR);
+            statusConfig.initialize();
         }
 
         @Override
         protected void doConfigure() {
-            super.doConfigure();
+            //super.doConfigure();
 
             getAppenders().clear();
-            Map<String, LoggerConfig> map = getLoggers();
-            if (!map.isEmpty()) {
-                for (String s : map.keySet()) {
-                    removeLogger(s);
-                }
-            }
-            if (!getRootLogger().getAppenders().isEmpty()) {
-                for (String s : getRootLogger().getAppenders().keySet()) {
-                    getRootLogger().removeAppender(s);
-                }
-            }
+            clearAppenders();
+            clearLoggerConfigs();
 
             setName("MyConfiguration");
             Layout<? extends Serializable> logcatLayout = PatternLayout.newBuilder().withPattern("%m").withConfiguration(this).build();
@@ -265,9 +285,12 @@ public class AppGlobal extends Application implements Thread.UncaughtExceptionHa
             String name = "RollingRandomAccessFile";
             String immediateFlush = "false";
             ThresholdFilter fileFilter = ThresholdFilter.createFilter(Level.DEBUG, Filter.Result.ACCEPT, Filter.Result.DENY);
-            SizeBasedTriggeringPolicy sizeBasedTriggeringPolicy = SizeBasedTriggeringPolicy.createPolicy("1M");
+            MonitorTriggeringPolicy monitorTriggeringPolicy = MonitorTriggeringPolicy.createPolicy();
+            CleanTriggeringPolicy cleanTriggeringPolicy = CleanTriggeringPolicy.createPolicy("5");
+            SizeBasedTriggeringPolicy sizeBasedTriggeringPolicy = SizeBasedTriggeringPolicy.createPolicy("5M");
             TimeBasedTriggeringPolicy timeBasedTriggeringPolicy = TimeBasedTriggeringPolicy.createPolicy("1", "false");
-            CompositeTriggeringPolicy policies = CompositeTriggeringPolicy.createPolicy(sizeBasedTriggeringPolicy, timeBasedTriggeringPolicy);
+            CompositeTriggeringPolicy policies = CompositeTriggeringPolicy.createPolicy(monitorTriggeringPolicy,
+                    cleanTriggeringPolicy, sizeBasedTriggeringPolicy, timeBasedTriggeringPolicy);
             DefaultRolloverStrategy defaultRolloverStrategy = DefaultRolloverStrategy.createStrategy("20", null, null, null, this);
             Layout<? extends Serializable> fileLayout = PatternLayout.newBuilder().withPattern("%d %p %c{1} [%t] %m%n").withConfiguration(this).build();
             RollingRandomAccessFileAppender rollingRandomAccessFileAppender = RollingRandomAccessFileAppender.createAppender(

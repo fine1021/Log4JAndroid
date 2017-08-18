@@ -11,7 +11,7 @@ import java.util.Map;
  * AndroidLookup
  */
 
-@Plugin(name = "android", category = "Lookup")
+@Plugin(name = "android", category = StrLookup.CATEGORY)
 public class AndroidLookup implements StrLookup {
 
     private static final Map<String, String> LOOK_UP_MAP = new HashMap<>();

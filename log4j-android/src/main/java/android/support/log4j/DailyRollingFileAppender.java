@@ -529,8 +529,10 @@ public class DailyRollingFileAppender extends FileAppender {
     public synchronized void setFile(String fileName, boolean append, boolean bufferedIO, int bufferSize) throws IOException {
         super.setFile(fileName, append, bufferedIO, bufferSize);
         if (append) {
-            File f = new File(fileName);
-            ((CountingQuietWriter) qw).setCount(f.length());
+            if (qw != null) {
+                File f = new File(fileName);
+                ((CountingQuietWriter) qw).setCount(f.length());
+            }
         }
     }
 
@@ -561,7 +563,18 @@ public class DailyRollingFileAppender extends FileAppender {
             previousCheck = rc.getPreviousCheckMillis(now, maxBackupDays);
             scheduleCleanTask();
         }
-        super.subAppend(event);
+        // if file not exists, create a new file
+        File file = new File(fileName);
+        if (!file.exists()) {
+            try {
+                setFile(fileName, true, bufferedIO, bufferSize);
+            } catch (IOException ignored) {
+            }
+        }
+        // no need write log if qw is null
+        if (qw != null) {
+            super.subAppend(event);
+        }
         if (fileName != null && qw != null) {
             long size = ((CountingQuietWriter) qw).getCount();
             if (size >= maxFileSize && size >= nextRollover) {

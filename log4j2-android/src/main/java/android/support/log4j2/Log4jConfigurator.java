@@ -9,6 +9,8 @@ import android.util.Log;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.rolling.CleanTriggeringPolicy;
+import org.apache.logging.log4j.core.appender.rolling.MonitorTriggeringPolicy;
 import org.apache.logging.log4j.core.async.AsyncLoggerContextSelector;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
@@ -110,7 +112,8 @@ public class Log4jConfigurator {
         } else {
             LogManager.setFactory(new Log4jContextFactory(new AndroidContextSelector()));
         }
-        injectPlugins(PACKAGE_NAME, new Class<?>[]{AndroidLookup.class, LogcatAppender.class});
+        injectPlugins(PACKAGE_NAME, new Class<?>[]{AndroidLookup.class, LogcatAppender.class,
+                CleanTriggeringPolicy.class, MonitorTriggeringPolicy.class});
     }
 
     /**
