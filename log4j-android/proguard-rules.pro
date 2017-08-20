@@ -23,3 +23,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Your application may contain more items that need to be preserved;
+# typically classes that are dynamically created using Class.forName:
+
+-keep class android.support.log4j.** { *; }
+-dontwarn android.support.log4j.**

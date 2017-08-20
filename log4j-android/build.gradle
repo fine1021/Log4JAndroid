@@ -1,4 +1,9 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
+
+def versionMajor = 1
+def versionMinor = 0
+def versionPatch = 0
 
 android {
     compileSdkVersion 25
@@ -7,8 +12,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 2
-        versionName "1.0.1"
+        versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
+        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -17,6 +22,16 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            consumerProguardFiles 'proguard-rules.pro'
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+
+    afterEvaluate {
+        tasks.withType(Javadoc) {
+            failOnError false
         }
     }
 }
@@ -30,11 +45,40 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+ext {
+    // installv1
+    bintrayRepo = 'maven'
+    bintrayName = 'log4j-android'
+
+    // library
+    libraryGroupId = 'com.android.support'
+    libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}"
+    libraryName = 'log4j-android'
+    libraryArtifact = 'log4j-android'
+    libraryUserOrg = 'fine1021'
+    libraryDescription = 'a support log4j library for android'
+
+    // url
+    siteUrl = 'https://github.com/fine1021/Log4JAndroid'
+    gitUrl = 'https://github.com/fine1021/Log4JAndroid.git'
+    issueUrl = 'https://github.com/fine1021/Log4JAndroid/issues'
+
+    // developer
+    developerId = 'fine1021'
+    developerName = 'fine'
+    developerEmail = 'fine1021@gmail.com'
+
+    // licenses
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
 task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
 
     baseName = "log4j-android"
 //    appendix = "bridge"
-    version = '1.0.1'
+    version = "${versionMajor}.${versionMinor}.${versionPatch}"
 //    classifier = "release"
     extension = "jar"
 
@@ -55,7 +99,7 @@ task sourcesJar(type: Jar) {
 
     baseName = "log4j-android"
 //    appendix = "bridge"
-    version = '1.0.1'
+    version = "${versionMajor}.${versionMinor}.${versionPatch}"
     classifier = "sources"
     extension = "jar"
 
@@ -72,10 +116,28 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
     baseName = "log4j-android"
 //    appendix = "bridge"
-    version = '1.0.1'
+    version = "${versionMajor}.${versionMinor}.${versionPatch}"
     classifier = "javadoc"
     extension = "jar"
 
     from javadoc.destinationDir
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+publish {
+    userOrg = libraryUserOrg
+    repoName = bintrayRepo
+    groupId = libraryGroupId
+    artifactId = libraryArtifact
+    publishVersion = libraryVersion
+    description = libraryDescription
+    website = 'https://github.com/fine1021/Log4JAndroid'
+    issueTracker = "${website}/issues"
+    repository = "${website}.git"
+    bintrayUser = properties.getProperty("bintray.user")
+    bintrayKey = properties.getProperty("bintray.apikey")
+    dryRun = false
 }
 
