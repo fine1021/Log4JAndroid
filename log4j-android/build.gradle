@@ -51,7 +51,7 @@ ext {
     bintrayName = 'log4j-android'
 
     // library
-    libraryGroupId = 'com.android.support'
+    libraryGroupId = 'com.simple.android'
     libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}"
     libraryName = 'log4j-android'
     libraryArtifact = 'log4j-android'
