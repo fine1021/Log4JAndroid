@@ -52,13 +52,13 @@ dependencies {
 ext {
     // installv1
     bintrayRepo = 'maven'
-    bintrayName = 'log4j2-android'
+    bintrayName = 'support-log4j2'
 
     // library
-    libraryGroupId = 'com.simple.android'
+    libraryGroupId = 'com.android.log4j2'
     libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}"
-    libraryName = 'log4j2-android'
-    libraryArtifact = 'log4j2-android'
+    libraryName = 'support-log4j2'
+    libraryArtifact = 'support-log4j2'
     libraryUserOrg = 'fine1021'
     libraryDescription = 'a support log4j2 library for android'
 
