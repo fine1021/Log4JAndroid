@@ -53,7 +53,7 @@ dependencies {
 ext {
     USER_ORG = 'fine1021'
     REPO_NAME = 'maven'
-    GROUP_ID = 'com.simple.android.log4j2'
+    GROUP_ID = 'simple.android.log4j2'
     ARTIFACT_ID = 'log4j2-android'
     DESCRIPTION = 'a support log4j2 library for android'
     PUBLISH_VERSION = "${versionMajor}.${versionMinor}.${versionPatch}"
