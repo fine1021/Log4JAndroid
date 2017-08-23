@@ -28,10 +28,11 @@ android {
     lintOptions {
         abortOnError false
     }
-    afterEvaluate {
-        tasks.withType(Javadoc) {
-            failOnError false
-        }
+}
+
+afterEvaluate {
+    tasks.withType(Javadoc) {
+        failOnError false
     }
 }
 
@@ -50,32 +51,13 @@ dependencies {
 }
 
 ext {
-    // installv1
-    bintrayRepo = 'maven'
-    bintrayName = 'support-log4j2'
-
-    // library
-    libraryGroupId = 'com.android.log4j2'
-    libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}"
-    libraryName = 'support-log4j2'
-    libraryArtifact = 'support-log4j2'
-    libraryUserOrg = 'fine1021'
-    libraryDescription = 'a support log4j2 library for android'
-
-    // url
-    siteUrl = 'https://github.com/fine1021/Log4JAndroid'
-    gitUrl = 'https://github.com/fine1021/Log4JAndroid.git'
-    issueUrl = 'https://github.com/fine1021/Log4JAndroid/issues'
-
-    // developer
-    developerId = 'fine1021'
-    developerName = 'fine'
-    developerEmail = 'fine1021@gmail.com'
-
-    // licenses
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
+    USER_ORG = 'fine1021'
+    REPO_NAME = 'maven'
+    GROUP_ID = 'com.simple.android.log4j2'
+    ARTIFACT_ID = 'log4j2-android'
+    DESCRIPTION = 'a support log4j2 library for android'
+    PUBLISH_VERSION = "${versionMajor}.${versionMinor}.${versionPatch}"
+    WEB_SITE = 'https://github.com/fine1021/Log4JAndroid'
 }
 
 task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
@@ -129,13 +111,13 @@ Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 publish {
-    userOrg = libraryUserOrg
-    repoName = bintrayRepo
-    groupId = libraryGroupId
-    artifactId = libraryArtifact
-    publishVersion = libraryVersion
-    description = libraryDescription
-    website = 'https://github.com/fine1021/Log4JAndroid'
+    userOrg = USER_ORG
+    repoName = REPO_NAME
+    groupId = GROUP_ID
+    artifactId = ARTIFACT_ID
+    publishVersion = PUBLISH_VERSION
+    description = DESCRIPTION
+    website = WEB_SITE
     issueTracker = "${website}/issues"
     repository = "${website}.git"
     bintrayUser = properties.getProperty("bintray.user")
