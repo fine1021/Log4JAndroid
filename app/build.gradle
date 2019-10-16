@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.0"
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
     defaultConfig {
         applicationId "com.yxkang.android.log4jandroid"
         minSdkVersion 16
-        targetSdkVersion 25
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
     }
@@ -27,13 +27,15 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'de.mindpipe.android:android-logging-log4j:1.0.3'
-    compile 'log4j:log4j:1.2.17'
-    compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'org.slf4j:slf4j-log4j12:1.7.25'
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
-    compile project(':log4j-android')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'de.mindpipe.android:android-logging-log4j:1.0.3'
+    implementation 'log4j:log4j:1.2.17'
+    implementation 'org.slf4j:slf4j-api:1.7.28'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.28'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation project(':log4j-android')
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }

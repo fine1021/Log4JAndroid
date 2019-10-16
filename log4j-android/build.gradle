@@ -3,19 +3,19 @@ apply plugin: 'com.novoda.bintray-release'
 
 def versionMajor = 1
 def versionMinor = 0
-def versionPatch = 0
+def versionPatch = 1
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 25
+        targetSdkVersion 29
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
     buildTypes {
@@ -37,12 +37,11 @@ afterEvaluate {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    compile 'log4j:log4j:1.2.17'
-    testCompile 'junit:junit:4.12'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly 'log4j:log4j:1.2.17'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
 
 ext {
@@ -66,14 +65,12 @@ task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
     // [baseName]-[appendix]-[version]-[classifier].[extension]
     // archiveName = "log4j-android.jar"
 
-    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
+    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/javac/release/classes"]
     from srcClassDir
 
-    exclude "android/support/log4j/BuildConfig.class"
+    exclude "**/BuildConfig.class"
     exclude "**/R.class"
     exclude "**/R\$*.class"
-
-    include "android/support/log4j/*.class"
 }
 
 task sourcesJar(type: Jar) {
@@ -113,7 +110,7 @@ publish {
     groupId = GROUP_ID
     artifactId = ARTIFACT_ID
     publishVersion = PUBLISH_VERSION
-    description = DESCRIPTION
+    desc = DESCRIPTION
     website = WEB_SITE
     issueTracker = "${website}/issues"
     repository = "${website}.git"

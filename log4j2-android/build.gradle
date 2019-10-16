@@ -6,16 +6,16 @@ def versionMinor = 0
 def versionPatch = 0
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 25
+        targetSdkVersion 29
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
     buildTypes {
@@ -37,17 +37,16 @@ afterEvaluate {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    provided 'org.slf4j:slf4j-api:1.7.25'
-    provided 'org.apache.logging.log4j:log4j-slf4j-impl:2.3'
-    compile 'org.apache.logging.log4j:log4j-api:2.3'
-    compile 'org.apache.logging.log4j:log4j-core:2.3'
-    compile 'org.apache.commons:commons-compress:1.12'
-    compile 'com.lmax:disruptor:3.3.6'
-    testCompile 'junit:junit:4.12'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    compileOnly 'org.slf4j:slf4j-api:1.7.28'
+    compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.3'
+    implementation 'org.apache.logging.log4j:log4j-core:2.3'
+    implementation 'org.apache.commons:commons-compress:1.12'
+    implementation 'com.lmax:disruptor:3.3.6'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
 
 ext {
@@ -71,10 +70,10 @@ task binaryJar(dependsOn: ['compileReleaseJavaWithJavac'], type: Jar) {
     // [baseName]-[appendix]-[version]-[classifier].[extension]
     // archiveName = "log4j2-android.jar"
 
-    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
+    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/javac/release/classes"]
     from srcClassDir
 
-    exclude "android/support/log4j2/BuildConfig.class"
+    exclude "**/BuildConfig.class"
     exclude "**/R.class"
     exclude "**/R\$*.class"
 }
@@ -116,7 +115,7 @@ publish {
     groupId = GROUP_ID
     artifactId = ARTIFACT_ID
     publishVersion = PUBLISH_VERSION
-    description = DESCRIPTION
+    desc = DESCRIPTION
     website = WEB_SITE
     issueTracker = "${website}/issues"
     repository = "${website}.git"

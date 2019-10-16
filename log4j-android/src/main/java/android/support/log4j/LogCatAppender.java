@@ -16,6 +16,13 @@ import org.apache.log4j.spi.LoggingEvent;
 
 public class LogCatAppender extends AppenderSkeleton {
 
+    /**
+     * Max tag length enforced by Android
+     * http://developer.android.com/reference/android/util/Log.html#isLoggable(java.lang.String, int)
+     */
+    private static final int MAX_TAG_LENGTH = 23;
+    private static final int MAX_LOG_LENGTH = 1024 * 3;
+
     protected Layout tagLayout;
 
     public LogCatAppender(final Layout messageLayout, final Layout tagLayout) {
@@ -36,44 +43,49 @@ public class LogCatAppender extends AppenderSkeleton {
         switch (le.getLevel().toInt()) {
             case Level.TRACE_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.v(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    log(Log.VERBOSE, getTag(le), getLayout().format(le) + '\n'
+                            + Log.getStackTraceString(le.getThrowableInformation().getThrowable()));
                 } else {
-                    Log.v(getTagLayout().format(le), getLayout().format(le));
+                    log(Log.VERBOSE, getTag(le), getLayout().format(le));
                 }
                 break;
             case Level.DEBUG_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.d(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    log(Log.DEBUG, getTag(le), getLayout().format(le) + '\n'
+                            + Log.getStackTraceString(le.getThrowableInformation().getThrowable()));
                 } else {
-                    Log.d(getTagLayout().format(le), getLayout().format(le));
+                    log(Log.DEBUG, getTag(le), getLayout().format(le));
                 }
                 break;
             case Level.INFO_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.i(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    log(Log.INFO, getTag(le), getLayout().format(le) + '\n'
+                            + Log.getStackTraceString(le.getThrowableInformation().getThrowable()));
                 } else {
-                    Log.i(getTagLayout().format(le), getLayout().format(le));
+                    log(Log.INFO, getTag(le), getLayout().format(le));
                 }
                 break;
             case Level.WARN_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.w(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    log(Log.WARN, getTag(le), getLayout().format(le) + '\n'
+                            + Log.getStackTraceString(le.getThrowableInformation().getThrowable()));
                 } else {
-                    Log.w(getTagLayout().format(le), getLayout().format(le));
+                    log(Log.WARN, getTag(le), getLayout().format(le));
                 }
                 break;
             case Level.ERROR_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.e(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    log(Log.ERROR, getTag(le), getLayout().format(le) + '\n'
+                            + Log.getStackTraceString(le.getThrowableInformation().getThrowable()));
                 } else {
-                    Log.e(getTagLayout().format(le), getLayout().format(le));
+                    log(Log.ERROR, getTag(le), getLayout().format(le));
                 }
                 break;
             case Level.FATAL_INT:
                 if (le.getThrowableInformation() != null) {
-                    Log.wtf(getTagLayout().format(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
+                    Log.wtf(getTag(le), getLayout().format(le), le.getThrowableInformation().getThrowable());
                 } else {
-                    Log.wtf(getTagLayout().format(le), getLayout().format(le));
+                    Log.wtf(getTag(le), getLayout().format(le));
                 }
                 break;
         }
@@ -94,6 +106,27 @@ public class LogCatAppender extends AppenderSkeleton {
 
     public void setTagLayout(final Layout tagLayout) {
         this.tagLayout = tagLayout;
+    }
+
+    private String getTag(LoggingEvent event) {
+        String tag = getTagLayout().format(event);
+        if ((tag.length() > MAX_TAG_LENGTH)) {
+            tag = tag.substring(0, MAX_TAG_LENGTH - 1) + "*";
+        }
+        return tag;
+    }
+
+    private void log(int priority, String tag, String msg) {
+        if (msg.length() > MAX_LOG_LENGTH) {
+            int length = msg.length();
+            for (int fromIndex = 0; fromIndex <= length; fromIndex += MAX_LOG_LENGTH) {
+                int toIndex = Math.min(fromIndex + MAX_LOG_LENGTH, length);
+                String subString = msg.substring(fromIndex, toIndex);
+                Log.println(priority, tag, subString);
+            }
+        } else {
+            Log.println(priority, tag, msg);
+        }
     }
 }
 
